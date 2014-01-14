@@ -1,0 +1,6 @@
+
+
+
+
+class nifType(object):
+    return

@@ -1,0 +1,56 @@
+partition_dict = dict()
+
+partition_dict['Fallout'] = {
+0: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'BP_TORSO'},\
+1: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'BP_HEAD'},\
+3: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'BP_LEFTARM'},\
+5: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'BP_RIGHTARM'},\
+7: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'BP_LEFTLEG'},\
+10: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'BP_RIGHTLEG'},\
+101: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'BP_SECTIONCAP_HEAD'},\
+103: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 0, 'body_part' : 'BP_SECTIONCAP_LEFTARM'},\
+105: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 0, 'body_part' : 'BP_SECTIONCAP_RIGHTARM'},\
+107: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 0, 'body_part' : 'BP_SECTIONCAP_LEFTLEG'},\
+110: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'BP_SECTIONCAP_RIGHTLEG'},\
+201: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'BP_TORSOCAP_HEAD'},\
+203: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 0, 'body_part' : 'BP_TORSOCAP_LEFTARM'},\
+205: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 0, 'body_part' : 'BP_TORSOCAP_RIGHTARM'},\
+207: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 0, 'body_part' : 'BP_TORSOCAP_LEFTLEG'},\
+210: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'BP_TORSOCAP_RIGHTLEG'},\
+1000: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'BP_TORSOSECTION_HEAD'},\
+3000: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'BP_TORSOSECTION_LEFTARM'},\
+5000: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'BP_TORSOSECTION_RIGHTARM'},\
+7000: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'BP_TORSOSECTION_LEFTLEG'},\
+10000: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'BP_TORSOSECTION_RIGHTLEG'}
+}
+
+partition_dict['Skyrim']= {
+32: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_32_BODY'},\
+33: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_33_HANDS'},\
+34: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_34_FOREARMS'},\
+37: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_37_FEET'},\
+38: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_38_CALVES'},\
+40: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_40_TAIL'},\
+130: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 0, 'body_part' : 'SBP_130_HEAD'},\
+143: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 0, 'body_part' : 'SBP_143_EARS'},\
+230: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_230_HEAD'}
+}
+
+version_data = dict()
+version_data['Oblivion'] = {'version': 0x14000005, 'user_version': 11, 'user_version_2': 11}
+version_data['Fallout'] = {'version': 0x14020007, 'user_version': 11, 'user_version_2': 34}
+version_data['Skyrim'] = {'version': 0x14020007, 'user_version': 12, 'user_version_2': 83}
+# version_data['Oblivion'] = {'version': 0x14000005, 'user_version': 11, 'user_version_2': 11}
+# version_data['Fallout'] = {'version': 0x14020007, 'user_version': 11, 'user_version_2': 34}
+# version_data['Skyrim'] = {'version': 0x14020007, 'user_version': 12, 'user_version_2': 83}
+
+part_settings = dict()
+part_settings['Oblivion'] = {'maxbonesperpartition': 18, 'maxbonespervertex': 4, 'maximize_bone_sharing': False}
+part_settings['Fallout'] = {'maxbonesperpartition': 18, 'maxbonespervertex': 4, 'maximize_bone_sharing': True}
+part_settings['Skyrim'] = {'maxbonesperpartition': 63, 'maxbonespervertex': 4, 'maximize_bone_sharing': False}
+
+"""
+Identify game of a given nif from version data
+"""
+
+game_lookup = dict([((val['version'], val['user_version'], val['user_version_2']), game) for game, val in version_data.items()])
