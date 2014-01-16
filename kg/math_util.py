@@ -190,6 +190,31 @@ def matrix3x3(coords = False):
     mat.m_33 = coords[2][2]
     return mat
 
+def matrix4x4(coords = False):
+    if not coords:
+        mat = NifFormat.Matrix44()
+        mat.set_identity()
+        return mat
+    mat = NifFormat.Matrix44()
+    mat.m_11 = coords[0][0]
+    mat.m_12 = coords[0][1]
+    mat.m_13 = coords[0][2]
+    mat.m_14 = coords[0][3]
+    mat.m_21 = coords[1][0]
+    mat.m_22 = coords[1][1]
+    mat.m_23 = coords[1][2]
+    mat.m_24 = coords[1][3]
+    mat.m_31 = coords[2][0]
+    mat.m_32 = coords[2][1]
+    mat.m_33 = coords[2][2]
+    mat.m_34 = coords[2][3]
+    mat.m_41 = coords[3][0]
+    mat.m_42 = coords[3][1]
+    mat.m_43 = coords[3][2]
+    mat.m_44 = coords[3][3]
+    return mat
+
+
 def calcMinMaxVector(loc_list, form = 'list', world_loc = False):
     
     """

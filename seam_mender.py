@@ -1,7 +1,7 @@
 import kg
 from kg import ui_tools
-#kg.template_util.loadSeamTemplate('')
-from kg.template_util import loadSeamTemplate
+#kg.template_util.loadTemplate('')
+from kg.template_util import loadTemplate
 from kg.file_util import load_nif, load_tri, get_files, save_file, getGenderFlag
 from kg.search_util import mainSearch, setSeams, setTriSeams
 from kg.ui_tools import uiButton, uiToggle, mainUI, uiComboSlider, uiRadio, uiFrame, uiLabel, constructMenu
@@ -93,6 +93,7 @@ menu.load_buttons({\
 
     'skin': uiToggle(option_frame, 'Copy Skin Only', 'GRID', column = 0, columnspan = 1, row = 0, default = False),\
     'doubles': uiToggle(option_frame, 'Mend Doubles', 'GRID', column = 1, columnspan = 1, row = 0, default = True),\
+    'pseudo_doubles': uiToggle(option_frame, 'Mend Pseudo-Doubles', 'GRID', column = 1, columnspan = 1, row = 1, default = False),\
     'tri': uiToggle(option_frame, 'Mend Tri Files', 'GRID', column = 2, columnspan = 1, row = 0, default = True),\
     
     'save': uiButton(utility_frame, 'Save Current Settings', 'GRID', column = 0, columnspan = 1, row = 9, buttonFunction = menu.save),\
@@ -159,7 +160,6 @@ def Main():
             
             targets_found = mainSearch(current_settings, mesh_, tri_mesh, search_resolution = 1, vertFunction = setTriSeams, nmv = target_nmv, act_verts = verts_, tri = True, world_loc = True)
 
-            #target_tri.save(this_file, current_settings)    
             save_file(target_tri, this_file, targets_found, current_settings)   
 
     def process_nif(this_file, repair_doubles = False):
@@ -222,7 +222,7 @@ def Main():
     gender_list = []
     
     if path.exists(current_settings['template']):
-        template_mesh = loadSeamTemplate(current_settings['template'], settings = current_settings)
+        template_mesh = loadTemplate(current_settings['template'], settings = current_settings)
         if not template_mesh:
             print('Invalid Template, Exiting')
             return

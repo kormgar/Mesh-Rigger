@@ -9,20 +9,16 @@ r_pkg_end = re.compile('.pkg$', flags=re.IGNORECASE)
 #from kg.file_util import load_nif
 #from kg.mesh_util import multiMesh
 
-def loadSeamTemplate(path_, settings = {}):
-    #t0 = time.time()
-    #if not path.isabs(path_):
-    #    path_ = path.normpath(path.join(kg.file_util.i_dir_, path_))
-    #print(path_)
+def loadTemplate(path_, settings = {}):
+
     print('Processing: ', path_)
     if re.search(r_pkg_end, path_):
-        vert_dict = loadTemplate(path_, settings)
+        vert_dict = loadSeamTemplate(path_, settings)
         #vert_dict, bone_dict = loadTemplate(path_, settings)
         mesh_dict = dict([
           (gender, kg.mesh_util.templateMesh(template['vert'], template['bone']))
           for gender, template in vert_dict.items()
                           ])
-        #print ('Total of ',len(this_mesh.getVerts()),'found in template.  Search array complete.')
         return mesh_dict
     else:
         test_nif = kg.file_util.load_nif(path_, settings = settings)
@@ -34,25 +30,6 @@ def loadSeamTemplate(path_, settings = {}):
         this_mesh = kg.mesh_util.multiMesh(test_nif.meshes, test_nif)
         print ('Total of ',len(this_mesh.getVerts()),'found in template.  Search array complete.')
         return this_mesh
-
-        #print('Get Detail Child Names')
-        #for a in this_mesh.block.get_detail_child_nodes():
-        #    print(a)        
-#         if test_nif.nif_type == 'Fallout':
-#             #print(mesh.block.skin_instance)
-#             for this_part in this_mesh.block.skin_instance.partitions:
-#                 print(this_part.body_part)
-#                 print(this_part)
-                #print(this_part.part_flag)
-                #print(dir(this_part))
-                #print(this_part.part_flag)
-                #print(this_part.get_games())
-                #print(this_part.get_strings())
-            #print(mesh.block.skin_instance.partitions)
-            #print(mesh.block.skin_instance.partitions)
-
-
-    #non_nmv_dict = this_mesh.getVerts( nmv = 'EXCLUDE')
 
 def saveTemplate(current_settings):
     
@@ -76,7 +53,11 @@ def saveTemplate(current_settings):
 def constructTemplate(current_settings, file_ = None):
     if not file_:
         file_ = current_settings['template']
-    template_mesh = loadSeamTemplate(file_, settings = current_settings)
+        
+    file_list = kg.file_util.get_files(file_, current_settings = current_settings, tri = False, morph = False)
+        
+    template_mesh = loadTemplate(file_list, settings = current_settings)
+    template_mesh.initDoubles(mend = True)
     
     template_nmv = current_settings.get('template_mesh')
     if template_nmv == 'Edges Only':
@@ -98,7 +79,7 @@ def constructTemplate(current_settings, file_ = None):
     for m in template_mesh.m_list:
         m_name = m.block.name
         vert_dict[m_name] = dict()
-        for i, v in m.getVerts(nmv = template_nmv).items():
+        for i, v in m.getVerts(nmv = template_nmv, limit_doubles = True).items():
             if v.NMV:
                 if v.normal:
                     vert_dict[m_name][i] = {'w_loc': v.getLoc(world_loc = True).as_list(), 'loc': v.getLoc(world_loc = False).as_list(), 'norm': v.normal.as_list(), 'wd': v.getWeight()}
@@ -110,7 +91,7 @@ def constructTemplate(current_settings, file_ = None):
     return template_dict
 
     
-def loadTemplate(file_name, current_settings):
+def loadSeamTemplate(file_name, current_settings):
     test_dict = pickle.load(open(file_name, "rb"))
     new_bones = {}
     for gender, template in test_dict.items():

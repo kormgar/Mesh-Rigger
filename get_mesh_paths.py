@@ -4,8 +4,8 @@ import kg
 
 #import kg
 from kg import ui_tools
-#kg.template_util.loadSeamTemplate('')
-from kg.template_util import loadSeamTemplate, loadTemplate
+#kg.template_util.loadTemplate('')
+from kg.template_util import loadTemplate, loadTemplate
 #from kg.file_util import load_nif, load_tri, get_files, save_file
 #from kg.search_util import mainSearch, setSeams, setTriSeams
 from kg.ui_tools import uiButton, uiToggle, mainUI, uiComboSlider, uiRadio, uiFrame, uiLabel, constructMenu

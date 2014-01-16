@@ -37,22 +37,14 @@ r_morph_01 = compile('^'+'(.*)'+'_[01]\.nif$', flags=IGNORECASE)
 Determine the configuration directory.  Create directory if not found
 """
 
+global i_dir_
+i_dir_ = path.normpath((getcwd()))
+
 global dir_
 dir_ = path.normpath(path.join(getcwd(), 'save'))
 if not path.exists(dir_):
     makedirs(dir_)
-#print(dir_)
     
-global i_dir_
-i_dir_ = path.normpath((getcwd()))
-if not path.exists(i_dir_):
-    makedirs(i_dir_)
-#print(i_dir_)
-#print(dir_)
-#print(i_dir_)
-
-
-
 def checkPath(path_, dir_ = i_dir_):
     #print('Checking Path', path_)
     #print('Test Results:', path.isabs(path_))
@@ -133,8 +125,6 @@ def parse_target_files(dirpath):
 def get_files(dirpath, current_settings = {}, tri = False, morph = True):
 
     """Check for .nif in dirpath"""
-    #print(current_settings['target'])
-    morph_key = getMorphType(current_settings.get('template'))
     
     if not search(r_nif, dirpath) and not search(r_tri, dirpath):
         if not path.isabs(dirpath):
@@ -155,7 +145,8 @@ def get_files(dirpath, current_settings = {}, tri = False, morph = True):
             file_list = [path.normpath(sub(r_parse_bracket, '', this_file)) for this_file in dir_files if checkFileType(this_file, tri)]
 
     if morph:
-
+        
+        morph_key = getMorphType(current_settings.get('template'))
         morph_set = set()
         
         if morph_key is not None:
@@ -226,7 +217,7 @@ class load_tri(object):
         return
 
 class load_nif(object):
-    def __init__(self, _path, template = None, settings = {}, init_skin = True, init_mesh = True):
+    def __init__(self, _path, template = None, settings = {}, init_skin = True, init_mesh = True, skeleton_only = False):
         _path = checkPath(_path)
         if not path.exists(_path):
             return None
@@ -265,20 +256,110 @@ class load_nif(object):
                 self.game = kg.data_sets.game_lookup.get((template.data.version, template.data.user_version, template.data.user_version_2))
             if not self.game:
                 self.game = 'Skyrim'                                        
-            
-        self.root_blocks = self.data.roots
-        self.skeleton_root = self.getSkeletonRoots()
+#         for block in self.data.get_global_iterator():
+#             try:
+#                 print('Before getSkeletonRoots', block.name)
+#                 print(block.translation)
+#             except:
+#                 pass
+        for idx, block in enumerate(self.data.get_global_iterator()):
+            if isinstance(block, NifFormat.NiNode):
+                if not block.name or block == bytes('', "utf-8"):
+                    block.name = bytes(str(idx), "utf-8")
+        
+        """
+        Attempt to identify a candidate for a scene root NiNode
+        """
+        
+        
+        if skeleton_only:
+            if self.game == 'Skyrim':
+                core = self.data._block_dct[0]
+                core.send_geometries_to_bind_position()
+                core.send_bones_to_bind_position()   
+                if isinstance(core, NifFormat.NiNode):
+                    self.skeleton_root = [core]    
+                else:
+                    self.skeleton_root = []
+                    for node in core.children:
+                        if isinstance(core, NifFormat.NiNode):
+                            if any([isinstance(b, NifFormat.NiNode) for b in node.children]):
+                                self.skeleton_root.append(node)
+
+                print('self.skeleton_root', self.skeleton_root[0].name)
+            elif self.game == 'Fallout':
+                core = self.data._block_dct[0]
+                self.skeleton_root = NifFormat.NiNode()
+                self.skeleton_root.name = bytes('Scene Root', "utf-8")
+                self.skeleton_root.flags = 14
+                for child in core.children:
+                    if isinstance(child, NifFormat.NiNode):
+                        self.skeleton_root.add_child(child)
+                        print(child.name)
+                self.skeleton_root = [self.skeleton_root]
+                for root in self.skeleton_root:
+                    root.send_geometries_to_bind_position()
+                    root.send_bones_to_bind_position()
+            elif self.game == 'Oblivion':
+                self.skeleton_root = [self.data._block_dct[0]]
+                for root in self.skeleton_root:
+                    root.send_geometries_to_bind_position()
+                    root.send_bones_to_bind_position()
+            self.bone_struct, self.bone_name_struct = self.getBoneStructure()
+            self.bone_dict = self.initBones()
+            return
+        else:
+            self.root_blocks = self.data.roots
+            self.skeleton_root = self.getSkeletonRoots()
         #self.main_root = self.skeleton_root[0]
+        
+#         for block in self.data.get_global_iterator():
+#             try:
+#                 print('Before Bind Positions', block.name)
+#                 print(block.translation)
+#             except:
+#                 pass     
+        
+        if self.template:
+            self.mod_loc_dict = dict([
+              (block.name, kg.math_util.vector(block.translation.as_list()))
+              for root in self.skeleton_root
+              for block in root.children
+              if isinstance(block, NifFormat.NiNode)])                
+        
         for root in self.skeleton_root:
             root.send_geometries_to_bind_position()
             root.send_bones_to_bind_position()
-        
+            
+        if self.template:
+            self.av_translation = self.getAverageTranslation()
+                       
+            print('self.av_translation', self.av_translation)      
+#         for block in self.data.get_global_iterator():
+#             try:
+#                 print('After Bind Positions', block.name)
+#                 print(block.translation)
+#             except:
+#                 pass        
         self.meshes = list()
         self.settings = settings
         
         self.bone_struct, self.bone_name_struct = self.getBoneStructure()
+#         for block in self.data.get_global_iterator():
+#             try:
+#                 print('After getBoneStructure', block.name)
+#                 print(block.translation)
+#             except:
+#                 pass   
     
         self.bone_dict = self.initBones()
+#         for block in self.data.get_global_iterator():
+#             try:
+#                 print('After initBones', block.name)
+#                 print(block.translation)
+#             except:
+#                 pass   
+        
         self.skin_dictionary = {}
         
         self.skinned_blocks = []
@@ -293,16 +374,28 @@ class load_nif(object):
         #return        
         #if settings.get('copy_havok'):
         
-        if init_skin:
+                     
+        if self.settings.get('copy_havok'):
+            self.get_Havok()
+            
+
+#             self.initMeshes(init_mesh)
+#             print('Copying Havok Blocks')
+#             self.copy_havok()
+        
+        if init_skin and not settings.get('delete_rigging'):
+            if self.settings.get('copy_havok') and self.template:
+                self.initMeshes(init_mesh)
             self.initSkin()
         else:
             self.initMeshes(init_mesh)
+#         for mesh in self.meshes:
+#             print(mesh.block.name)
+#             print(mesh.block.skin_instance.data.get_transform())
  
         if settings.get('bone'):
             self.mend_skin()
-             
-        if self.settings.get('copy_havok'):
-            self.copy_havok()
+
             
         self.block_dict = {}
         for branch in self.data.get_global_iterator():
@@ -316,11 +409,43 @@ class load_nif(object):
         for branch in self.data.get_global_iterator():
             yield branch
             
+    def getAverageTranslation(self):
+        
+        average_vector = kg.math_util.vector([0,0,0])
+        if not self.mod_loc_dict:
+            return average_vector
+        
+        for root in self.skeleton_root:
+            for block in root.children:
+                if isinstance(block, NifFormat.NiNode):
+                    self.mod_loc_dict[block.name] = block.translation - self.mod_loc_dict[block.name]
+                    
+        divisor = 1.0 / float(len(self.mod_loc_dict))
+
+        for val in self.mod_loc_dict.values():
+            average_vector += val * divisor
+            
+        return average_vector
+            
     def rebuildSkinInstance(self):
 
         bone_set = set()
 
-        delete_rigging = self.settings.get('delete_rigging')
+        copy_havok = self.settings.get('copy_havok')
+        if copy_havok:
+            delete_rigging = True
+            flatten_structure = False
+        else:
+            delete_rigging = bool(self.settings.get('delete_rigging'))
+            if not self.settings.get('skeleton_links'):
+                flatten_structure = True
+            else:
+                flatten_structure = False
+            print('delete_rigging, flatten_structure', delete_rigging, flatten_structure)
+
+            
+
+        #delete_rigging = self.settings.get('delete_rigging')
         #print('**********delete_rigging',delete_rigging,'**********')
             
         template_bone_dict = self.template.lno.bone_dict
@@ -339,8 +464,9 @@ class load_nif(object):
                 bone_set.update(set(list(mesh_.bone_update_dict.keys())))
             for bone_name in bone_set:
                 if bone_name not in bone_dict:
-                    bone_dict[bone_name] = kg.bone_util.unWrapBone(template_bone_dict[bone_name])
+                    bone_dict[bone_name] = kg.bone_util.unWrapBone(template_bone_dict[bone_name], root_transform = True, correction_vector = self.av_translation)
                     bone_data[bone_name] = template_bone_dict[bone_name]
+                    bone_data[bone_name]['children'] = []
 
         self.data = NifFormat.Data()
 
@@ -360,13 +486,16 @@ class load_nif(object):
 #             self.data.version = self.version['version']
 #             self.data.user_version = self.version['user_version']
 #             self.data.user_version_2 = self.version['user_version_2']
+        root_dict = dict([(bone_name, bone_dict[bone_name])  for bone_name, b_data in bone_data.items() if b_data.get('is_skel_root')])
+        #print(root_dict)
 
-        self.data.roots = [bone_dict[bone_name] for bone_name, b_data in bone_data.items() if b_data.get('is_skel_root')]
-    
+        self.data.roots = list(root_dict.values())
         
-        for ids, bone in enumerate(self.data.roots):
+        for bone_name, bone in root_dict.items():
+            if not isinstance(bone, NifFormat.NiNode):
+                continue
             #print(bone.name)
-            child_list = bone_data[bone.name].get('children')
+            child_list = bone_data[bone_name].get('children')
             #print(child_list)
             if not child_list:
                 child_list = []
@@ -382,48 +511,74 @@ class load_nif(object):
             child_bone_list = [bone_dict.get(child_name) for child_name in child_list if child_name in bone_dict]
             if not delete_rigging:
                 other_child_list = [self.block_dict.get(child_name) for child_name in child_list if child_name not in bone_dict and child_name in self.block_dict]
+                if bone_data.get(bone_name):
+                    for mesh_name in bone_data[bone_name]['other_children']:
+                        mesh = self.mesh_dict.get(mesh_name)
+                        if mesh:
+                            other_child_list.append(mesh.block)
             else:
                 other_child_list = [mesh_.block for mesh_ in self.meshes]
             
             for child_block in other_child_list:
-                print('Adding Child Block', child_block.name, 'to', bone.name)
+                print('Adding Child Block', child_block.name, 'to', bone_name)
                 bone.add_child(child_block)
                 mesh_ = self.mesh_dict[child_block.name]
-                skin_instance = mesh_.skin_type()
+                if delete_rigging:
+                    skin_instance = self.template.m_list[0].skin_type()    
+                else:          
+                    skin_instance = mesh_.skin_type()
+                #skin_instance = self.template.m_list[0].skin_type()
                 child_block.skin_instance = skin_instance
                 skin_instance.data = NifFormat.NiSkinData()
-                skin_instance.data.scale = 1.0
-                skin_instance.data.rotation = kg.math_util.matrix3x3()
-                skin_instance.data.translation = kg.math_util.vector([0,0,0])
-#                 skin_instance.data.scale = mesh_.skin_transform['scale']
-#                 skin_instance.data.rotation = kg.math_util.matrix3x3(mesh_.skin_transform['rotation'])
-#                 skin_instance.data.translation = kg.math_util.vector(mesh_.skin_transform['translation'])
+#                 skin_instance.data.scale = 1.0
+#                 skin_instance.data.rotation = kg.math_util.matrix3x3()
+#                 skin_instance.data.translation = kg.math_util.vector([0,0,0])
+                skin_instance.data.scale = mesh_.skin_transform['scale']
+                skin_instance.data.rotation = kg.math_util.matrix3x3(mesh_.skin_transform['rotation'])
+                skin_instance.data.translation = kg.math_util.vector(mesh_.skin_transform['translation'])
                 skin_instance.skeleton_root = bone
                 skin_instance.num_bones = 0
                 skin_instance.bones.update_size()
                    
             for child_block in child_bone_list:
-                print('Adding Child Bone', child_block.name, 'to', bone.name)
+                print('Adding Child Bone', child_block.name, 'to', bone_name)
+                print(child_block.translation)
                 bone.add_child(child_block)
+                print(child_block.translation)
     
-        for bone_name, bone_data in bone_data.items():
 
-            child_list = bone_data.get('children')
-            if bone_data.get('is_skel_root') or not child_list:
+
+        for bone_name, bone_d in bone_data.items():
+
+
+            child_list = bone_d.get('children')
+            if bone_d.get('is_skel_root') or not child_list:
                 continue
     
             parent_bone = bone_dict[bone_name]
-    
+            if not isinstance(parent_bone, NifFormat.NiNode):
+                continue    
             if child_list:
 
                 child_bone_list = [bone_dict.get(child_name) for child_name in child_list if child_name in bone_dict]
                 other_child_list = [self.block_dict.get(child_name) for child_name in child_list if child_name not in bone_dict and child_name in self.block_dict]
-                    
-                for child_block in child_bone_list:
-                    print('Adding Child Block', child_block.name, 'to', parent_bone.name)
+                if not delete_rigging:
+                    for mesh_name in bone_d['other_children']:
+                        mesh = self.mesh_dict.get(mesh_name)
+                        if mesh:
+                            other_child_list.append(mesh.block)
+                        
+                for child_block in other_child_list:
+                    print('Adding Child Block', child_block.name, 'to', bone_name)
+                    print(type(child_block), type(parent_bone))
+                    if not isinstance(child_block, NifFormat.NiGeometry):
+                        continue
                     parent_bone.add_child(child_block)    
-                    mesh_ = self.mesh_dict[child_block.name]            
-                    skin_instance = mesh_.skin_type()
+                    mesh_ = self.mesh_dict[child_block.name]
+                    if delete_rigging:
+                        skin_instance = self.template.m_list[0].skin_type()    
+                    else:          
+                        skin_instance = mesh_.skin_type()
                     child_block.skin_instance = skin_instance  
                     skin_instance.data = NifFormat.NiSkinData()
 #                     skin_instance.data.scale = 1.0
@@ -438,34 +593,84 @@ class load_nif(object):
                     
     
                     #child_block.update_bind_position()
-                for child_block in other_child_list:
-                    print('Adding Child Bone', child_block.name, 'to', parent_bone.name)
+                for child_block in child_bone_list:
+                    print('Adding Child Bone', child_block.name, 'to', bone_name)
                     parent_bone.add_child(child_block)            
-        
-    
+
+#         from pyffi.spells.nif.fix import SpellSendGeometriesToBindPosition, SpellSendDetachedGeometriesToNodePosition
+#         from pyffi.spells.nif import NifToaster
+#         toaster = NifToaster()
+#          #toaster.exclude_types = (NifFormat.NiSkinInstance, NifFormat.NiSkinData, NifFormat.NiSkinPartition, NifFormat.BSDismemberSkinInstance)
+# #         #print(test_nif.bone_name_struct)
+#         SpellSendGeometriesToBindPosition(data=self.data, toaster=toaster).recurse()
+#         SpellSendDetachedGeometriesToNodePosition(data=self.data, toaster=toaster).recurse()
+        #SpellFixCenterRadius(data=self.data, toaster=toaster).recurse()
+        #SpellFixSkinCenterRadius(data=self.data, toaster=toaster).recurse()
+#
+#         for block in self.data.get_global_iterator():
+#             if isinstance(block, NifFormat.NiNode) and bytes('Breast01', 'utf-8') in block.name:
+#                 print(block.name, block.translation)
+        for root in self.data.roots:
+            root.send_geometries_to_bind_position()
+            #root.send_bones_to_bind_position()
+#         for block in self.data.get_global_iterator():
+#             if isinstance(block, NifFormat.NiNode) and bytes('Breast01', 'utf-8') in block.name:
+#                 print(block.name, block.translation)
+
+
         for idx, block in enumerate(self.data.get_global_iterator()):
 
             if isinstance(block, NifFormat.NiGeometry):
+                if delete_rigging:
+                    block.translation -= self.av_translation
+                block.update_bind_position()
+                
                 mesh_ = self.mesh_dict[block.name]
                 weight_dict = mesh_.processWeightDictionary()
-
+#                 for thing in self.data.get_global_iterator():
+#                     if isinstance(thing, NifFormat.NiNode) and bytes('Breast01', 'utf-8') in thing.name:
+#                         print('Before Weight Added', thing.name, thing.translation)
                 for bone_name, wd_ in weight_dict.items():
-                    if bone_name not in bone_dict:
-                        bone = kg.bone_util.unWrapBone(self.template.lno.bone_dict[bone_name])
-                    else:
-                        bone = bone_dict[bone_name]
+                    bone = bone_dict[bone_name]
+                    #if bone_name not in bone_dict:
+                    #    bone = kg.bone_util.unWrapBone(self.template.lno.bone_dict[bone_name])
+                    #else:
+                    #    bone = bone_dict[bone_name]
                         
                     block.add_bone(bone, wd_)
-                
+#                 for thing in self.data.get_global_iterator():
+#                     if isinstance(thing, NifFormat.NiNode) and bytes('Breast01', 'utf-8') in thing.name:
+#                         print(thing.name, thing.translation)
+                #"""
+                try:
+                    block.update_tangent_space()
+                except:
+                    pass
+                try:
+                    block.update_skin_center_radius()
+                except:
+                    print('Warning: Skin Center Radius could not be updated')
+                     
+                block.update_bind_position()
+                #""
+#                 for thing in self.data.get_global_iterator():
+#                     if isinstance(thing, NifFormat.NiNode) and bytes('Breast01', 'utf-8') in thing.name:
+#                         print(thing.name, thing.translation)
+                        
                 if not isinstance(block.skin_instance, NifFormat.BSDismemberSkinInstance):
                     triangles = None
                     trianglepartmap = None
-                elif delete_rigging:
-                    triangles, trianglepartmap = mesh_.generatePartitionMap()
-                else:
+                elif mesh_.partition_map_ and not self.settings.get('delete_partitions'):
                     triangles = mesh_.triangles_
                     trianglepartmap = mesh_.partition_map_
+                else:
+                    triangles, trianglepartmap = mesh_.generatePartitionMap()
+                print(block.name)
                 
+#                 for thing in self.data.get_global_iterator():
+#                     if isinstance(thing, NifFormat.NiNode) and bytes('Breast01', 'utf-8') in thing.name:
+#                         print('Before Skin Partition Updated', thing.name, thing.translation)
+                        
                 block.update_skin_partition(
                                     maxbonesperpartition=kg.data_sets.part_settings[self.game]['maxbonesperpartition'],
                                     maxbonespervertex=kg.data_sets.part_settings[self.game]['maxbonespervertex'],
@@ -476,6 +681,9 @@ class load_nif(object):
                                     stitchstrips = True, 
                                     maximize_bone_sharing=kg.data_sets.part_settings[self.game]['maximize_bone_sharing']
                                     ) 
+#                 for thing in self.data.get_global_iterator():
+#                     if isinstance(thing, NifFormat.NiNode) and bytes('Breast01', 'utf-8') in thing.name:
+#                         print('Skin Partition Updated', thing.name, thing.translation)
                 if isinstance(block.skin_instance, NifFormat.BSDismemberSkinInstance):
                     for this_part in block.skin_instance.partitions:
                         if isinstance(block.skin_instance, NifFormat.BSDismemberSkinInstance):
@@ -483,15 +691,100 @@ class load_nif(object):
                                 this_part.part_flag.pf_editor_visible = kg.data_sets.partition_dict[self.game][this_part.body_part]['pf_editor_visible']
                                 this_part.part_flag.reserved_bits_1 = kg.data_sets.partition_dict[self.game][this_part.body_part]['reserved_bits_1']
                                 this_part.part_flag.pf_start_net_boneset = kg.data_sets.partition_dict[self.game][this_part.body_part]['pf_start_net_boneset']
+                        
+#                 for thing in self.data.get_global_iterator():
+#                     if isinstance(thing, NifFormat.NiNode) and bytes('Breast01', 'utf-8') in thing.name:
+#                         print('NEXT', thing.name, thing.translation)  
+
+        used_bones = set()
+        if flatten_structure:
+            for idx, block in enumerate(self.data.get_global_iterator()):
+                if isinstance(block, NifFormat.NiGeometry):                        
+                    used_bones.update(set(block.flatten_skin()))
+            for root in self.data.roots:
+                for child in root.children:
+                    if isinstance(child, NifFormat.NiNode) and child not in used_bones:
+                        root.remove_child(child)                    
+                    
+#                 for thing in self.data.get_global_iterator():
+#                     if isinstance(thing, NifFormat.NiNode) and bytes('Breast01', 'utf-8') in thing.name:
+#                         print('After', thing.name, thing.translation)
+#                         
+#                         print([child.name for child in thing.children])                    
+                #print(block.name)        
+                #print(block.skin_instance.data)
+                
                             #print(this_part)
                 #for i, bone in enumerate(block.skin_instance.bones):
                 #    print(i, bone)        
                 #print(block.skin_instance.data.bone_list)
-                block.update_bind_position()
+                #block.update_bind_position()
+
+#         for block in self.data.get_global_iterator():
+#             if isinstance(block, NifFormat.NiNode) and bytes('Breast01', 'utf-8') in block.name:
+#                 print(block.name, block.translation)
+
+        #SpellSendGeometriesToBindPosition
+        #SpellSendDetachedGeometriesToNodePosition
+
+        
+#         if flatten_structure:
+#             for root in self.data.roots:
+#                 for child in root.children:
+#                     if isinstance(child, NifFormat.NiNode) and child not in used_bones:
+#                         root.remove_child(child)
+                        
+        if self.settings.get('copy_havok') and self.template.lno.havok_blocks:
+            for havok_block in self.template.lno.havok_blocks:
+                for root in self.data.roots:
+                    root.add_extra_data(havok_block)
+#                     
+#         for block in self.data.get_global_iterator():
+#             if isinstance(block, NifFormat.NiNode) and bytes('Breast01', 'utf-8') in block.name:
+#                 print(block.name, block.translation)                    
+
+                
+#             self.data.roots[0].add_extra_data(self.template.lno.havok_blocks[0])
+#             
+# if self.template.lno.havok_blocks and not self.havok_blocks:
+#             self.data.roots[0].add_extra_data(self.template.lno.havok_blocks[0])   
+#             for block in self.data.get_global_iterator():
+#                 
+#                 if isinstance(block, NifFormat.NiNode) and block not in used_bones:
+#                     self.data.replace_global_node(block, None)
+                    
+            #for block in self.data.roots:
+            #    block.flatten_skin()SpellMergeSkeletonRoots
+            #from pyffi.spells.nif.optimize import SpellDelUnusedBones
+#             from pyffi.spells.nif.fix import SpellMergeSkeletonRoots, SpellDelUnusedRoots
+#             from pyffi.spells.nif import NifToaster
+#             toaster = NifToaster()
+#             SpellDelUnusedRoots(data=self.data, toaster=toaster).recurse()
+#             SpellMergeSkeletonRoots(data=self.data, toaster=toaster).recurse()
+
+        #from pyffi.spells.nif.fix import SpellSendGeometriesToBindPosition, SpellSendDetachedGeometriesToNodePosition, SpellSendBonesToBindPosition
+        #from pyffi.spells.nif import NifToaster
+        #toaster = NifToaster()
+        #toaster.exclude_types = (NifFormat.NiSkinInstance, NifFormat.NiSkinData, NifFormat.NiSkinPartition, NifFormat.BSDismemberSkinInstance)
+        #print(test_nif.bone_name_struct)
+        #SpellSendGeometriesToBindPosition(data=self.data, toaster=toaster).recurse()
+        #SpellSendDetachedGeometriesToNodePosition(data=self.data, toaster=toaster).recurse()
+        #SpellSendBonesToBindPosition(data=self.data, toaster=toaster).recurse()
+        #SpellSendGeometriesToBindPosition
+        #SpellSendDetachedGeometriesToNodePosition
+
+                
+        
+#         for block in self.data.get_global_iterator():
+#             try:
+#                 print(block.name)
+#                 print(block.translation)
+#             except:
+#                 pass
          
-        for root in self.data.roots:
-            root.send_geometries_to_bind_position()
-            root.send_bones_to_bind_position()
+#         for root in self.data.roots:
+#             root.send_geometries_to_bind_position()
+#             root.send_bones_to_bind_position()
 
   
     def getGender(self):
@@ -587,12 +880,15 @@ class load_nif(object):
 
     def initBones(self):
         struct_dict = self.bone_struct
-        print(self.skeleton_root)
+        #print(self.skeleton_root)
         #for bone in self.getDictElements(struct_dict):
         #    print(bone.name)
         #    print(bone)
-            
-        return dict([(bone.name, kg.bone_util.wrapBone(bone, skel_root = bone in self.skeleton_root)) for bone in self.getDictElements(struct_dict)])
+#         a = dict([(bone.name, kg.bone_util.wrapBone(bone, skel_root = bone in self.skeleton_root)) for bone in self.getDictElements(struct_dict)])
+#         for b, c in a.items():
+#             print(b, c['is_skel_root'])
+#         return a
+        return dict([(bone.name, kg.bone_util.wrapBone(bone, self.skeleton_root[0])) for bone in self.getDictElements(struct_dict)])
         #$print(self.bone_dict)
     
     def getChildBones(self, bone_struct, bone_name_struct, bone_key_set):
@@ -607,6 +903,7 @@ class load_nif(object):
                 bone_key_set.update(bone_key_set)
                 child_struct[child] = {}
             #bone_struct[bone.name] = {}
+            
             bone_struct[bone], bone_name_struct[bone.name] = self.getChildBones(child_struct, {} , bone_key_set)
             #bone_name_struct[bone.name] = self.getChildBones(child_name_struct, bone_key_set)
         return bone_struct, bone_name_struct
@@ -744,7 +1041,7 @@ class load_nif(object):
                 
         return
     
-    def copy_havok(self):
+    def get_Havok(self):
         
         for block in self.root_blocks:
             for this_block in block.tree():
@@ -752,11 +1049,11 @@ class load_nif(object):
                     if bytes('Havok', "utf-8") in this_block.name:
                         self.havok_blocks.append(this_block)
                         
-        if not self.template:
-            return
-                
-        if self.template.lno.havok_blocks and not self.havok_blocks:
-            self.data.roots.add_extra_data(self.template.lno.havok_blocks[0])   
+#         if not self.template:
+#             return
+#                 
+#         if self.template.lno.havok_blocks and not self.havok_blocks:
+#             self.data.roots[0].add_extra_data(self.template.lno.havok_blocks[0])   
 
 #     def rebuild_skin(self, this_block):
 # 
@@ -854,6 +1151,9 @@ class load_nif(object):
             self.rebuildSkinInstance()
             print('Skin Instances Rebuilt')
 
+#         for a in self.data.get_global_iterator():
+#             print(a)
+
         """
         Save Main Mesh
         """
@@ -878,125 +1178,6 @@ class load_nif(object):
         
         return
 
-        
-#         current_settings['destination'] = checkPath(current_settings['destination'])
-#         print(current_settings['destination'])
-#         dir_path, file_name = path.split(file_name)
-#         print('test_1',dir_path)
-#         #for branch in self.data.get_global_iterator():
-#         #    if isinstance(branch, NifFormat.NiGeometry) and branch.skin_instance:
-#         #        branch.update_bind_position()
-# #         skel_root = self.root_blocks[0]
-# #         #skel_root.send_geometries_to_bind_position()
-# #         skel_root.send_bones_to_bind_position()
-#         #update_bind_position
-#         if current_settings.get('subfolder'):
-#             """Preserve the relative file structure in the output folder"""
-#             rel_path = path.relpath(dir_path, start=current_settings['target'])
-#             dir_path = path.join(current_settings['destination'], rel_path)
-#             
-#         else:   
-#             dir_path = path.join(current_settings['destination'])
-#         print('test_2',dir_path)
-#             
-#         if not path.exists(dir_path):
-#             makedirs(dir_path)
-#             print ('Folder not found.  Adding ' + dir_path)
-        
-#         if self.nif_type == 'Skyrim':
-#             max_part_bones = 63
-#             max_vert_bones = 4
-#             maximize_bone_sharing = False
-#         elif self.nif_type == 'Fallout':
-#             max_part_bones = 18
-#             max_vert_bones = 4
-#             maximize_bone_sharing = True
-#         else:
-#             max_part_bones = 18
-#             max_vert_bones = 4
-#             maximize_bone_sharing = False
-        """
-        Check for newly skinned blocks and generate partitions as needed
-        """
-        #part_dict = {}
-        #part_props = {}
-        
-#         
-#         
-#         if self.new_skinned_meshes:
-#             print('Applying Partitions')
-#         for this_mesh in self.meshes:
-# 
-#             if this_mesh in self.new_skinned_meshes and isinstance(self.template.block.skin_instance, NifFormat.BSDismemberSkinInstance):
-#                 partition_map = this_mesh.generatePartitionMap()
-#                 part_dict ={}
-#                 if current_settings.get('def_partitions'):
-#                     part_dict = kg.data_sets.partition_dict.get(self.nif_type)
-#                 if not part_dict:
-#                     part_props = dict([(this_part.body_part, this_part) for block in self.template.getblocks() for this_part in block.skin_instance.partitions])
-# 
-#             elif isinstance(this_mesh.block.skin_instance, NifFormat.BSDismemberSkinInstance):
-#                 if this_mesh.partition_map:
-#                     partition_map = list(this_mesh.partition_map.values())
-#                 else:
-#                     triangles, partition_map = (this_mesh.block.skin_instance.get_dismember_partitions())
-#                 part_dict = kg.data_sets.partition_dict.get(self.nif_type)
-# 
-#             else:
-#                 partition_map = None
-#             print('Rebuilding Skin Partition')
-#                     #SpellSendBonesToBindPosition
-#                     #SpellSendGeometriesToBindPosition    
-#             this_mesh.block.update_skin_partition(
-#                                 maxbonesperpartition=max_part_bones,
-#                                 maxbonespervertex=max_vert_bones,
-#                                 padbones=False,
-#                                 trianglepartmap=partition_map,
-#                                 stripify = False,
-#                                 stitchstrips = True,
-#                                 maximize_bone_sharing = maximize_bone_sharing) 
-#             if part_dict:
-#                 for this_part in this_mesh.block.skin_instance.partitions:
-#                     t_p_f = part_dict[this_part.body_part]
-#                     p_f = this_part.part_flag
-#                     p_f.pf_editor_visible = t_p_f['pf_editor_visible']
-#                     p_f.reserved_bits_1 = t_p_f['reserved_bits_1']
-#                     p_f.pf_start_net_boneset = t_p_f['pf_start_net_boneset']
-#             elif part_props:
-#                 for this_part in this_mesh.block.skin_instance.partitions:
-#                     print (part_dict)
-#                     #33: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_33_HANDS'},\
-#                     t_p_f = part_props[this_part.body_part].part_flag
-#                     p_f = this_part.part_flag
-#                     p_f.pf_editor_visible = t_p_f.pf_editor_visible
-#                     p_f.reserved_bits_1 = t_p_f.reserved_bits_1
-#                     p_f.pf_start_net_boneset = t_p_f.pf_start_net_boneset
-                    #print (t_p_f.pf_start_net_boneset)
-                    #print (p_f.pf_start_net_boneset)
-                #print(this_mesh.block.skin_instance.partitions)
-#             this_mesh.block.update_skin_partition(
-#                             maxbonesperpartition = max_part_bones, 
-#                             maxbonespervertex = max_vert_bones, 
-#                             trianglepartmap = partition_map,
-#                             maximize_bone_sharing = True)
-
-#         if self.settings.get('skin'):
-# 
-#             material_block = False
-#             for prop in branch.properties:
-#                 if type(prop) == NifFormat.NiMaterialProperty:
-#                     material_block = prop
-#                     break
-#             if not material_block:
-#                 print('Block with no Material found, skipping Block')
-#                 continue
-#             elif material_block.name != bytes('skin', "utf-8"):
-#                 print('Block with material named ' + material_block.name.decode("utf-8") + ' found, skipping Block')
-#                 continue
-#         print('Block Found')
-            
-
-
         #from pyffi.spells.nif.fix import SpellSendGeometriesToBindPosition, SpellSendDetachedGeometriesToNodePosition, SpellSendBonesToBindPosition
         #from pyffi.spells.nif import NifToaster
         #toaster = NifToaster()
@@ -1007,39 +1188,6 @@ class load_nif(object):
         #SpellSendBonesToBindPosition(data=self.data, toaster=toaster).recurse()
         #SpellSendGeometriesToBindPosition
         #SpellSendDetachedGeometriesToNodePosition
-
-        """
-        Apply Weights and Rebuild skin if needed
-        """
-
-        if any([mesh_.bone_update_dict for mesh_ in self.meshes]):
-            print('Rebuilding Skin Instances')
-            self.rebuildSkinInstance()
-            print('Skin Instances Rebuilt')
-
-        """
-        Save Main Mesh
-        """
-        self.nif_file.close()
-        print('Saving ', file_name)   
-        niffile = open(path.normpath(path.join(dir_path, file_name)), 'wb')
-        self.data.write(niffile)
-        if not morph_dict:
-            niffile.close()  
-            print('Save Complete') 
-            return
-        """
-        Generate Morph Mesh
-        """
-        self.applyMorphDictionary(morph_dict)
-        morph_file = swapMorphType(file_name)
-        print('Saving ', morph_file)   
-        niffile = open(path.normpath(path.join(dir_path, morph_file)), 'wb')
-        self.data.write(niffile)
-        niffile.close()
-        print('Save Complete')
-        
-
 
 class config(object):
     def __init__(self, savedir = False, file = 'setings.cfg', version = None):

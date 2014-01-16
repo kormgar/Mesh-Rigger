@@ -140,7 +140,7 @@ class vertex(object):
         return self.uv
     
     def setNormal(self, loc, world_loc = False, normalize = False):
-        if self.normal:
+        if loc:
             if world_loc:
                 loc = loc #* self.mesh.mat_i
             if normalize:
@@ -150,6 +150,8 @@ class vertex(object):
             self.normal.y = temp_loc[1]
             self.normal.z = temp_loc[2]
             self.nloc = [self.normal.x, self.normal.y, self.normal.z]
+        else:
+            self.normal = None
         
     def getDoubles(self):
         if self.doubles is None:
@@ -204,4 +206,41 @@ class vertex(object):
             self.side = set(['LEFT'])
         else:
             self.side = set(['LEFT', 'RIGHT'])
+
+def mendSeamDoubles(vert_list):
+    if not vert_list:
+        return
+    divisor = 1.0 / float(len(vert_list))
+    average_loc = vector([0,0,0])
+    average_normal = vector([0,0,0])
+    norm_list = []
+    weight_dict = {}
+    set_normal = 0
+    for v in vert_list:
+        
+        average_loc += divisor * v.getLoc(world_loc = False)
+        
+        if v.getNormal():
+            norm_list.append(v.getNormal())
+            set_normal += 1
+            
+        for bone, weight in v.getWeight():
+            weight *= divisor
+            if bone not in weight_dict:
+                weight_dict[bone] = weight
+            else:
+                weight_dict[bone] += weight
+        
+    if set_normal > 0:
+        n_div = 1.0 / float(set_normal)
+        for norm in norm_list:
+            average_normal += n_div * norm
+    else:
+        average_normal = None
+
+    for v in vert_list:
+        v.setLoc(average_loc, world_loc = False)
+        v.setNormal(average_normal, world_loc = False, normalize = True)
+        v.weight_dict = weight_dict
+
             

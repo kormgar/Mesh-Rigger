@@ -160,13 +160,14 @@ class mainUI(tkinter.Tk):
         _name = test_reg.get('name', False)
 
         if _version is False or _name is False:
-            print('Invalid save file detected, aborting')
+            print('Invalid save file detected, Loading Default Configuration')
+            return False
             
         if _version != self.version:
-            print('Version mismatch in save file detected, aborting')
+            print('Version mismatch in save file detected, Loading Default Configuration')
             return False
         if _name != self.name:
-            print('Tool Name mismatch in save file detected, aborting')
+            print('Tool Name mismatch in save file detected, Loading Default Configuration')
             return False
 
         key_list = ['template', 'destination']
@@ -261,13 +262,35 @@ class mainUI(tkinter.Tk):
         self.quit()
 
     def OpenFemaleTemplate(self):
-        self.OpenFile(self.menu_values.get('female_template')[0])
+        self.OpenFiles(self.menu_values.get('female_template')[0])
 
     def OpenMaleTemplate(self):
-        self.OpenFile(self.menu_values.get('male_template')[0])
+        self.OpenFiles(self.menu_values.get('male_template')[0])
+
+    def OpenNeutralTemplate(self):
+        self.OpenFiles(self.menu_values.get('neutral_template')[0])
 
     def OpenTemplate(self):
         self.OpenFile(self.menu_values.get('template')[0])
+
+    def OpenSkeletonTemplate(self):
+        self.OpenFile(self.menu_values.get('template_s')[0])
+
+    def OpenFiles(self, var_):
+        
+        dirpath = var_.get()
+        file_path, file_ = kg.file_util.parse_target_files(dirpath)
+        template = kg.file_util.checkPath(file_path)
+        
+        print('initialdir', template)
+        if path.exists(template):
+            template_files = tkinter.filedialog.askopenfilenames(initialdir = template)
+        else:
+            template_files = tkinter.filedialog.askopenfilenames()
+        #target_files = tkinter.filedialog.askopenfilenames(initialdir = target, filetypes = self.target_mask)
+        if template_files:
+            self.var_.set(template_files)
+        return
 
     def OpenFile(self, var_):
         file_path, file = path.split(var_.get())
@@ -306,12 +329,13 @@ class mainUI(tkinter.Tk):
         #path_ = kg.file_util.get_files(self.menu_values.get('target')[0].get(), current_settings = {}, tri = False, morph = False)[0]
         #file_path, file = path.split(path_)
         target = kg.file_util.checkPath(file_path)
+        print('initialdir', target)
         if path.exists(target):
             target_folder = tkinter.filedialog.askdirectory(initialdir = target)
         else:
             target_folder = tkinter.filedialog.askdirectory()
 
-        print('initialdir', target)
+        print('target_folder', target_folder)
         if target_folder:
             self.menu_values['target'][0].set(target_folder)
             #self.reg['target'] = target_folder

@@ -4,7 +4,7 @@ from pyffi import formats
 from pyffi.formats import nif
 from pyffi.formats.nif import NifFormat
 #from pyffi.formats.nif.NifFormat import Matrix33, Vector3
-from kg.vert_util import vertex
+from kg.vert_util import vertex, mendSeamDoubles
 from kg.face_util import face
 from kg.search_util import BuildVertexDictionary, NormalizeInfluence
 from kg.bone_util import getBoneSide, wrapBone, unWrapBone, extractTransform
@@ -162,8 +162,8 @@ class mesh(object):
         else:
             delete_rig = False
         
-        if not self.lno.settings.get('copy_havok'):
-            self.cleanBUDict()
+        #if not self.lno.settings.get('copy_havok'):
+        self.cleanBUDict()
         try:
             max_vert_bone = part_settings[self.lno.game]['maxbonespervertex']
         except:
@@ -534,6 +534,36 @@ class multiMesh(object):
     def __iter__(self):
         for mesh_ in self.m_list:
             yield mesh_
+            
+    def loadSkeleton(self, skeleton):
+        if not skeleton:
+            return
+        return
+    
+    def initDoubles(self, res = 1000, mend = False):
+        """
+        
+        Attempt to find one or more vertex doubles.
+
+        Builds a vertex location dictionary to index the locations for fast access.
+
+        keywards accepted:
+
+        res: integer value.  Default 10000.  1 / res (default .0001) gives the length of each side 
+        of the box checked for the mirror of a given vertex
+
+        """
+        main_dictionary = BuildVertexDictionary(self.getVerts().values(), res = res, world_loc = False)
+        for y_entry in main_dictionary.values():
+            for x_entry in y_entry.values():
+                for vert_list in x_entry.values():
+                    if len(vert_list) > 1:
+                        for this_vert in vert_list:
+                            this_vert.setDouble(dict([(v1.idx, v1) for v1 in vert_list if v1 is not this_vert]))
+                        mendSeamDoubles(vert_list)    
+                    else:
+                        vert_list[0].setDouble({})
+
     
     def getblocks(self):
         return [this_mesh.block for this_mesh in self.m_list]
@@ -550,7 +580,7 @@ class multiMesh(object):
         return self.nmv_verts
 
            
-    def getVerts(self, side = False, nmv = False):
+    def getVerts(self, side = False, nmv = False, limit_doubles = False):
         
         include_set = set(list(self.verts.items()))
         if side:
@@ -559,6 +589,12 @@ class multiMesh(object):
             if this_vert.getSide(side)))
         if nmv:
             include_set.intersection_update(set(list(self.getNMVVerts(nmv = nmv).items())))
+        if limit_doubles:
+            double_set = set()
+            for vert in include_set:
+                if vert.getDoubles() and vert not in double_set:
+                    double_set.update(set(vert.getDoubles()))
+            include_set.difference_update(double_set)
                            
         return dict(include_set)
 

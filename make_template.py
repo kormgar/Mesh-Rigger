@@ -1,7 +1,7 @@
 import kg
 from kg import ui_tools
-#kg.template_util.loadSeamTemplate('')
-from kg.template_util import loadSeamTemplate, loadTemplate
+#kg.template_util.loadTemplate('')
+from kg.template_util import loadTemplate, loadTemplate
 #from kg.file_util import load_nif, load_tri, get_files, save_file
 #from kg.search_util import mainSearch, setSeams, setTriSeams
 from kg.ui_tools import uiButton, uiToggle, mainUI, uiComboSlider, uiRadio, uiFrame, uiLabel, constructMenu
@@ -46,7 +46,7 @@ menu.menu_values = {\
     'subfolder': (tkinter.IntVar(), 0),\
     'female_template': (tkinter.StringVar(), '/test/female.nif'),\
     'male_template': (tkinter.StringVar(), '/test/male.nif'),\
-    'template': (tkinter.StringVar(), '/test/template.nif'),\
+    'neutral_template': (tkinter.StringVar(), '/test/template.nif'),\
     'target': (tkinter.StringVar(), '/test/'),\
     'destination': (tkinter.StringVar(), '/test/output/'),\
     }
@@ -58,7 +58,7 @@ menu_structure = [
 {'File': [\
   {"Select Female Template..." : {'command': menu.OpenFemaleTemplate}},\
   {"Select Male Template..." : {'command': menu.OpenMaleTemplate}},\
-  {"Select Neutral Template..." : {'command': menu.OpenTemplate}},\
+  {"Select Neutral Template..." : {'command': menu.OpenNeutralTemplate}},\
   {"Select Destination Folder..." : {'command': menu.SelectDestinationFolder}},\
   ]},\
 {'Help': [\
@@ -71,7 +71,7 @@ menu.template_mask = mask = [("nif files","*.nif")]
 menu.target_mask = mask = [("nif files","*.nif"), ("tri files","*.tri")]
 
 menu.load_buttons({\
-    'template_mesh' : uiRadio(option_frame_1, 'Template Mesh',['Edges Only','Exclude Edges','All'], column = 0, columnspan = 1, row = 1, rowspan = 4, default = 'Exclude Edges', pack = True),\
+    'template_mesh' : uiRadio(option_frame_1, 'Template Mesh',['Edges Only','Exclude Edges','All'], column = 0, columnspan = 1, row = 1, rowspan = 4, default = 'Edges Only', pack = True),\
     'female': uiToggle(option_frame_2, 'Female Template', 'GRID', column = 0, columnspan = 1, row = 0, default = True),\
     'male': uiToggle(option_frame_2, 'Male Template', 'GRID', column = 0, columnspan = 1, row = 1, default = True),\
     'neutral': uiToggle(option_frame_2, 'Neutral Template', 'GRID', column = 0, columnspan = 1, row = 2, default = True),\

@@ -25,16 +25,50 @@ partition_dict['Fallout'] = {
 }
 
 partition_dict['Skyrim']= {
+# 32: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_32_BODY'},\
+# 33: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_33_HANDS'},\
+# 34: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_34_FOREARMS'},\
+# 37: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_37_FEET'},\
+# 38: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_38_CALVES'},\
+# 40: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_40_TAIL'},\
+# 130: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 0, 'body_part' : 'SBP_130_HEAD'},\
+
+
+0: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'BP_TORSO'},\
+1: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'BP_HEAD'},\
+
+30: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_30_HEAD'},\
+31: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_31_HAIR'},\
 32: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_32_BODY'},\
 33: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_33_HANDS'},\
 34: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_34_FOREARMS'},\
+35: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_35_AMULET'},\
+36: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_36_RING'},\
 37: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_37_FEET'},\
 38: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_38_CALVES'},\
 40: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_40_TAIL'},\
-130: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 0, 'body_part' : 'SBP_130_HEAD'},\
-143: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 0, 'body_part' : 'SBP_143_EARS'},\
+41: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_41_LONGHAIR'},\
+42: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_42_CIRCLET'},\
+
+44: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_44_DRAGON_BLOODHEAD_OR_MOD_MOUTH'},
+45: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_45_DRAGON_BLOODWINGL_OR_MOD_NECK'},
+46: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_46_DRAGON_BLOODWINGR_OR_MOD_CHEST_PRIMARY'},
+47: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_47_DRAGON_BLOODTAIL_OR_MOD_BACK'},
+51: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_51_DECAPITATE'},
+61: {'pf_editor_visible' : 1, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_61_FX01'},
+
+130: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_130_HEAD'},\
+131: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_131_HAIR'},\
+132: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_132_BODY'},\
+141: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_141_LONGHAIR'},\
+142: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_142_CIRCLET'},\
+143: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_143_EARS'},\
 230: {'pf_editor_visible' : 0, 'reserved_bits_1' : 0, 'pf_start_net_boneset' : 1, 'body_part' : 'SBP_230_HEAD'}
 }
+
+
+
+
 
 version_data = dict()
 version_data['Oblivion'] = {'version': 0x14000005, 'user_version': 11, 'user_version_2': 11}

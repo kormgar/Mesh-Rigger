@@ -1,5 +1,6 @@
 from re import compile, sub, findall, IGNORECASE
 import kg
+from kg.math_util import vector
 from pyffi.formats.nif import NifFormat
 #import cPickle as pickle
 
@@ -112,27 +113,45 @@ def parseTrailingNumbers(strng):
         idx += 1
 
     return d, idx
-    
-def wrapBone(bone, skel_root = False):
+
+def getBoneName(bone):
+    bone_key = None
+    if bone.name:
+        bone_key = bone.name
+    elif bone.children:
+        bone_key = tuple([b.name for b in bone.children if isinstance(b, NifFormat.NiNode)])
+    return bone_key
+
+def wrapBone(bone, skel_root = None):
     #print(bone.name)
+    if bone is skel_root:
+        is_skel_root = True
+    else:
+        is_skel_root = False
+    #print(bone.name, skel_root.name)
+    #print('root_transform', bone.get_transform(relative_to=skel_root).as_list())
     
     #print(list(child.name for child in bone.children))
     return {
-    'is_skel_root': skel_root,\
+    'is_skel_root': is_skel_root,\
     'bounding_box': extractBoundingBox(bone.bounding_box),\
-    'children': list(child.name for child in bone.children if child),\
-    'collision_object': bone.collision_object,\
-    'controller': bone.controller,\
-    'effects': list(bone.effects),\
-    'extra_data': bone.extra_data,\
-    'extra_data_list': list(bone.extra_data_list),\
+    'children': list(child.name for child in bone.children if isinstance(child, NifFormat.NiNode)),\
+    'other_children': list(child.name for child in bone.children),\
+    'root_transform': bone.get_transform(relative_to=skel_root).as_list(),\
+    #'collision_object': bone.collision_object,\
+    #'controller': bone.controller,\
+    #'effects': list(bone.effects),\
+    #'extra_data': 0,\
+    #'extra_data': bone.extra_data,\
+    #'extra_data_list': list(bone.extra_data_list),\
+    #'extra_data_list': [],\
     'flags': bone.flags,\
     'has_bounding_box': bone.has_bounding_box,\
     'has_old_extra_data': bone.has_old_extra_data,\
     'name': bone.name,\
     'num_children': bone.num_children,\
     'num_effects': bone.num_effects,\
-    'num_extra_data_list': bone.num_extra_data_list,\
+    #'num_extra_data_list': bone.num_extra_data_list,\
     'num_properties': bone.num_properties,\
     'old_extra_internal_id': bone.old_extra_internal_id,\
     'old_extra_prop_name': bone.old_extra_prop_name,\
@@ -149,34 +168,34 @@ def wrapBone(bone, skel_root = False):
     }
 
 
-def unWrapBone(bone_values):
+def unWrapBone(bone_values, root_transform = False, correction_vector = vector([0,0,0])):
 
     this_bone = NifFormat.NiNode()
-    this_bone.collision_object = bone_values['collision_object']
-    this_bone.controller = bone_values['controller']
-    this_bone.extra_data = bone_values['extra_data']
+    #this_bone.collision_object = bone_values['collision_object']
+    #this_bone.controller = bone_values['controller']
+    #this_bone.extra_data = bone_values['extra_data']
     this_bone.flags = bone_values['flags']
     this_bone.has_bounding_box = bone_values['has_bounding_box']
     this_bone.has_old_extra_data = bone_values['has_old_extra_data']
     this_bone.name = bone_values['name']
     #this_bone.num_children = bone_values['num_children']
     this_bone.num_effects = bone_values['num_effects']
-    this_bone.num_extra_data_list = bone_values['num_extra_data_list']
+    #this_bone.num_extra_data_list = bone_values['num_extra_data_list']
     this_bone.num_properties = bone_values['num_properties']
     this_bone.old_extra_internal_id = bone_values['old_extra_internal_id']
     this_bone.old_extra_prop_name = bone_values['old_extra_prop_name']
     this_bone.old_extra_string = bone_values['old_extra_string']
-    this_bone.scale = bone_values['scale']
+    #this_bone.scale = bone_values['scale']
     this_bone.unknown_2 = bone_values['unknown_2']
     this_bone.unknown_byte = bone_values['unknown_byte']
     this_bone.unknown_short_1 = bone_values['unknown_short_1']
-    this_bone.rotation = kg.math_util.matrix3x3(bone_values['rotation'])
-    this_bone.translation = kg.math_util.vector(bone_values['translation'])
+    #this_bone.rotation = kg.math_util.matrix3x3(bone_values['rotation'])
+    #this_bone.translation = kg.math_util.vector(bone_values['translation'])
     this_bone.velocity = kg.math_util.vector(bone_values['velocity'])
     update_array(this_bone.properties, bone_values['properties'])
     update_array(this_bone.unknown_1, bone_values['unknown_1'])
-    update_array(this_bone.extra_data_list, bone_values['extra_data_list'])
-    update_array(this_bone.effects, bone_values['effects'])
+    #update_array(this_bone.extra_data_list, bone_values['extra_data_list'])
+    #update_array(this_bone.effects, bone_values['effects'])
     update_array(this_bone.properties, bone_values['properties'])
     b_box_data = bone_values['bounding_box']
     b_box = NifFormat.BoundingBox()
@@ -185,6 +204,13 @@ def unWrapBone(bone_values):
     b_box.translation = kg.math_util.vector(b_box_data['translation'])
     b_box.unknown_int = b_box_data['unknown_int']
     
+    if root_transform:
+        this_bone.set_transform(kg.math_util.matrix4x4(bone_values['root_transform']))
+    else:
+        this_bone.scale = bone_values['scale']
+        this_bone.rotation = kg.math_util.matrix3x3(bone_values['rotation'])
+        this_bone.translation = kg.math_util.vector(bone_values['translation'])
+    this_bone.translation += correction_vector
     return this_bone
 
 def extractTransform(data_set):

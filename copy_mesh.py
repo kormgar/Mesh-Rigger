@@ -1,6 +1,6 @@
 import kg
 from kg import ui_tools
-from kg.template_util import loadSeamTemplate
+from kg.template_util import loadTemplate
 from kg.file_util import load_nif
 from kg.ui_tools import uiButton, uiToggle, mainUI, uiFrame, constructMenu
 
@@ -124,7 +124,7 @@ def Main():
     template_mesh = None
     
     if path.exists(current_settings['template']):
-        template_mesh = loadSeamTemplate(current_settings['template'], settings = current_settings)
+        template_mesh = loadTemplate(current_settings['template'], settings = current_settings)
         if not template_mesh:
             print('No Valid Blocks found on Template Mesh, Exiting')
             return

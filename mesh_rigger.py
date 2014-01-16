@@ -1,6 +1,6 @@
 import kg
 from kg import ui_tools
-from kg.template_util import loadSeamTemplate
+from kg.template_util import loadTemplate
 from kg.file_util import load_nif, config, i_dir_, save_file
 from kg.search_util import mainSearch, setWeightDictionary
 from kg.ui_tools import uiButton, uiToggle, mainUI, uiComboSlider, uiRadio, uiFrame, uiLabel, constructMenu
@@ -27,7 +27,7 @@ utility_frame.grid(sticky = tkinter.W + tkinter.E + tkinter.N + tkinter.S)
 
 #print('Default Settings', ui_tools.svReg)
 
-menu.version = 'b_13'
+menu.version = 'b_14'
 menu.name = 'MeshRigger_Options'
 menu.file = config_file
 
@@ -35,8 +35,10 @@ menu.menu_values = {\
     'Game': (tkinter.StringVar(), 'Skyrim'),\
     'subfolder': (tkinter.IntVar(), 0),\
     'template': (tkinter.StringVar(), 'Mesh Rigger/template.nif'),\
+    'template_s': (tkinter.StringVar(), ''),\
     'target': (tkinter.StringVar(), 'Mesh Rigger/'),\
     'destination': (tkinter.StringVar(), 'Mesh Rigger/output/'),\
+    'skeleton_links': (tkinter.IntVar(), 1),\
     }
 
 """
@@ -45,8 +47,11 @@ Build a dictionary that defines the menu structure
 
 menu_structure = [
 {'File': [\
-  {"Select Template..." : {'command': menu.OpenTemplate}},\
-  {"Target Mesh Options" : [\
+  {"Template Options" : [\
+    {'Select Template Mesh...' : {'command': menu.OpenTemplate}},\
+    {'Select Template Skeleton...' : {'command': menu.OpenSkeletonTemplate}},\
+    {'Preserve Skeleton Structure' : {'var': menu.menu_values['skeleton_links']}}]},\
+  {"Target Options" : [\
     {'Select Target Folder...' : {'command': menu.SelectTargetFolder}},\
     {'Include Subfolders' : {'var': menu.menu_values['subfolder'] }},\
     {'Process Selected Meshes Only...' : {'command': menu.SelectTargetFile}}]},\
@@ -72,9 +77,10 @@ menu.load_buttons({\
     #'RIGHT': uiToggle(menu.frame, 'Mirror Right to Left', 'GRID', column = 2, columnspan = 1, row = 3, default = False, category = ['LR'], control_E_key = ['LR']),\
     #'NONE': uiToggle(menu.frame, 'No Mirroring', 'GRID', column = 2, columnspan = 1, row = 4, default = True, category = ['LR'], control_E_key = ['LR']),\
     'select_bones': uiToggle(menu_frame, 'Select Bones to Copy', 'GRID', column =0, columnspan = 1, row = 2, default = True),\
-    #'copy_havok': uiToggle(menu_frame, 'Copy Havok node', 'GRID', column = 0, columnspan = 1, row = 3, default = False),\
+    'copy_havok': uiToggle(menu_frame, 'Copy Havok node', 'GRID', column = 0, columnspan = 1, row = 3, default = False),\
     'delete': uiToggle(menu_frame, 'Overwrite Existing Bones', 'GRID', column = 1, columnspan = 1, row = 2, default = False),\
     'delete_rigging': uiToggle(menu_frame, 'Delete Existing Rigging', 'GRID', column = 1, columnspan = 1, row = 3, default = False),\
+    'delete_partitions': uiToggle(menu_frame, 'Delete Existing Partitions', 'GRID', column = 1, columnspan = 1, row = 4, default = False),\
     #'mirror' : uiRadio(utility_frame, 'Mirroring Options',['Mirror Left to Right','Mirror Right to Left','No Mirroring'], column = 0, columnspan = 1, row = 0, rowspan = 8, default = 'No Mirroring'),\
 
     'save': uiButton(utility_frame, 'Save Current Settings', 'GRID', column = 0, columnspan = 1, row = 9, buttonFunction = menu.save),\
@@ -136,10 +142,12 @@ def Main():
     template_mesh = None
     
     if path.exists(current_settings['template']):
-        template_mesh = loadSeamTemplate(current_settings['template'], settings = current_settings)
+        template_mesh = loadTemplate(current_settings['template'], settings = current_settings)
         if not template_mesh:
             print('No Valid Blocks found on Template Mesh, Exiting')
             return
+        skeleton = current_settings.get('template_s')
+        template_mesh.loadSkeleton(skeleton)
     
         bone_list = current_settings['bone_list'] = sorted(list(template_mesh.bone_dict.keys()))
         #print(bone_list)
@@ -153,6 +161,22 @@ def Main():
     if not template_mesh:
         print('Template Not Found, Exiting')
         return
+
+    if current_settings.get('template_s'):
+        print('Generating Bone Dictionary from Skeleton')
+        skeleton = kg.file_util.load_nif(current_settings['template_s'], settings = current_settings, skeleton_only = True)
+        for b_data in skeleton.bone_dict.values():
+            if b_data.get('is_skel_root'):
+                root = b_data
+                break
+                
+        for bone_name, bone_data in template_mesh.lno.bone_dict.items():
+            if bone_name not in skeleton.bone_dict and not bone_data.get('is_skel_root'):
+                skeleton.bone_dict[bone_name] = bone_data
+                root['children'].append(bone_name)
+        template_mesh.lno.bone_dict = skeleton.bone_dict
+
+        print('Skeleton Dictionary Generation Complete')
 
     nif_list, morph_set = kg.file_util.get_files(current_settings['target'], current_settings, tri = False)
     for test_file in nif_list:
